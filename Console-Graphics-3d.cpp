@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <conio.h>
-constexpr auto PI = 3.14159265358979323846;
+#define PI 3.14159265358979323846
 
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- FIGURE -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- 
 struct Dot_2d
@@ -57,7 +57,7 @@ struct Figure_3d
             // Read rotate center
             fscanf_s(fp, "%f %f %f", &rotate_3d_center.x, &rotate_3d_center.y, &rotate_3d_center.z);
         }
-        else printf("File open error");
+        else vertex_number = edge_number = 0;
     }
 
     void dot_rotate_3d(Dot_3d& dot, float deg_rot_x, float deg_rot_y, float deg_rot_z, float rot_x0, float rot_y0, float rot_z0)
@@ -219,7 +219,7 @@ struct Console_Screen
 
     void set_figure(Figure_3d FIGURE)
     {
-        // Projection 3d on 2d SCREEN
+        // Projection 3d on 2d plane
         for (int i = 0; i < FIGURE.vertex_number; i++) FIGURE.vertexes_projection[i] = convert_dot_3d_to_2d(FIGURE.vertexes[i]);
 
         // Set edges
@@ -230,9 +230,6 @@ struct Console_Screen
     }
 };
 
-Figure_3d FIGURE_1;
-Console_Screen SCREEN;
-
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- MAIN -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 int main()
 {
@@ -240,6 +237,9 @@ int main()
     system("mode con cols=100 lines=101");
     system("title Figures 3d");
     system("color 0F");
+
+    Figure_3d FIGURE_1;
+    Console_Screen SCREEN;
 
     // Read figure data
     FIGURE_1.read_from_file("figure0.dat");
