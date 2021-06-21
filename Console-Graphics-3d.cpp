@@ -1,32 +1,25 @@
-#include <math.h>
+#include <cmath>
 #include <windows.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <conio.h>
-#define PI 3.14159265358979323846
+constexpr auto PI = 3.14159265358979323846;
 
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- FIGURE -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- 
 struct Dot_2d
 {
-    double x;
-    double y;
+    float x;
+    float y;
 };
 struct Dot_3d
 {
-    double x;
-    double y;
-    double z;
+    float x;
+    float y;
+    float z;
 };
 struct Edge
 {
     int begin;
     int end;
-};
-struct Rotate_3d_Speed
-{
-    int x;
-    int y;
-    int z;
 };
 struct Figure_3d
 {
@@ -37,7 +30,8 @@ struct Figure_3d
     Edge* edges;
     char dot_edge = (char)249;
     char dot_vertex = (char)219;
-    Rotate_3d_Speed rotate_speed;
+    Dot_3d rotate_3d_speed;
+    Dot_3d rotate_3d_center;
 
     void read_from_file(const char* fname)
     {
@@ -48,130 +42,94 @@ struct Figure_3d
         {
             // Read vertexes
             fscanf_s(fp, "%d", &vertex_number);
-
             vertexes = new Dot_3d[vertex_number];
             vertexes_projection = new Dot_2d[vertex_number];
-
-            float vert_x, vert_y, vert_z;
-            for (int i = 0; i < vertex_number; i++)
-            {
-                fscanf_s(fp, "%f %f %f", &vert_x, &vert_y, &vert_z);
-                vertexes[i].x = vert_x;
-                vertexes[i].y = vert_y;
-                vertexes[i].z = vert_z;
-            }
+            for (int i = 0; i < vertex_number; i++) fscanf_s(fp, "%f %f %f", &vertexes[i].x, &vertexes[i].y, &vertexes[i].z);
 
             // Read edges
             fscanf_s(fp, "%d", &edge_number);
-
             edges = new Edge[edge_number];
+            for (int i = 0; i < edge_number; i++) fscanf_s(fp, "%d %d", &edges[i].begin, &edges[i].end);
 
-            for (int i = 0; i < edge_number; i++)
-            {
-                fscanf_s(fp, "%d %d", &edges[i].begin, &edges[i].end);
-            }
+            // Read rotate speed
+            fscanf_s(fp, "%f %f %f", &rotate_3d_speed.x, &rotate_3d_speed.y, &rotate_3d_speed.z);
 
-            for (int i = 0; i < 3; i++)
-            {
-                fscanf_s(fp, "%d %d %d", &rotate_speed.x, &rotate_speed.y, &rotate_speed.z);
-            }
-
+            // Read rotate center
+            fscanf_s(fp, "%f %f %f", &rotate_3d_center.x, &rotate_3d_center.y, &rotate_3d_center.z);
         }
         else printf("File open error");
     }
 
-    void Rotate_Z(Dot_3d& vert, double deg_rot, double rot_x0, double rot_y0)
+    void dot_rotate_3d(Dot_3d& dot, float deg_rot_x, float deg_rot_y, float deg_rot_z, float rot_x0, float rot_y0, float rot_z0)
     {
-        if (deg_rot == 0) return;
-
-        double deg_res, deg0;
+        float r, deg0;
 
         // Move rotation axis to center
-        vert.x -= rot_x0;
-        vert.y -= rot_y0;
+        dot.x -= rot_x0;
+        dot.y -= rot_y0;
+        dot.z -= rot_z0;
 
-        // Switch to polar coordinate system
-        double r = sqrt(vert.x * vert.x + vert.y * vert.y);
-        if (r)
+        if (deg_rot_x)
         {
-            if (vert.x > 0) deg0 = asin(vert.y / r);
-            else deg0 = PI - asin(vert.y / r);
-            deg_res = deg0 + deg_rot / 180 * PI;
+            // Switch to polar coordinate system
+            r = sqrt(dot.y * dot.y + dot.z * dot.z);
+            if (r)
+            {
+                if (dot.z > 0) deg0 = acos(dot.y / r);
+                else deg0 = -acos(dot.y / r);
 
-            // Get result coordinates in rectangle system
-            vert.x = r * cos(deg_res);
-            vert.y = r * sin(deg_res);
+                // Get result coordinates in rectangle system
+                dot.y = r * cos(deg0 + deg_rot_x / 180 * PI);
+                dot.z = r * sin(deg0 + deg_rot_x / 180 * PI);
+            }
+        }
+        if (deg_rot_y)
+        {
+            r = sqrt(dot.x * dot.x + dot.z * dot.z);
+            if (r)
+            {
+                if (dot.z > 0) deg0 = acos(dot.x / r);
+                else deg0 = -acos(dot.x / r);
+
+                dot.x = r * cos(deg0 + deg_rot_y / 180 * PI);
+                dot.z = r * sin(deg0 + deg_rot_y / 180 * PI);
+            }
+        }
+        if (deg_rot_z)
+        {
+            r = sqrt(dot.x * dot.x + dot.y * dot.y);
+            if (r)
+            {
+                if (dot.y > 0) deg0 = acos(dot.x / r);
+                else deg0 = -acos(dot.x / r);
+
+                dot.x = r * cos(deg0 + deg_rot_z / 180 * PI);
+                dot.y = r * sin(deg0 + deg_rot_z / 180 * PI);
+            }
         }
 
         // Move rotation axis from center
-        vert.x += rot_x0;
-        vert.y += rot_y0;
+        dot.x += rot_x0;
+        dot.y += rot_y0;
+        dot.z += rot_z0;
     }
 
-    void Rotate_Y(Dot_3d& vert, double deg_rot, double rot_x0, double rot_z0)
-    {
-        if (deg_rot == 0) return;
-
-        double deg_res, deg0;
-
-        // Move rotation axis to center
-        vert.x -= rot_x0;
-        vert.z -= rot_z0;
-
-        // Switch to polar coordinate system
-        double r = sqrt(vert.x * vert.x + vert.z * vert.z);
-        if (r)
-        {
-            if (vert.x > 0) deg0 = asin(vert.z / r);
-            else deg0 = PI - asin(vert.z / r);
-            deg_res = deg0 + deg_rot / 180 * PI;
-
-            // Get result coordinates in rectangle system
-            vert.x = r * cos(deg_res);
-            vert.z = r * sin(deg_res);
-        }
-
-        // Move rotation axis from center
-        vert.x += rot_x0;
-        vert.z += rot_z0;
-    }
-
-    void Rotate_X(Dot_3d& vert, double deg_rot, double rot_y0, double rot_z0)
-    {
-        if (deg_rot == 0) return;
-
-        double deg_res, deg0;
-
-        // Move rotation axis to center
-        vert.y -= rot_y0;
-        vert.z -= rot_z0;
-
-        // Switch to polar coordinate system
-        double r = sqrt(vert.y * vert.y + vert.z * vert.z);
-        if (r)
-        {
-            if (vert.y > 0) deg0 = asin(vert.z / r);
-            else deg0 = PI - asin(vert.z / r);
-            deg_res = deg0 + deg_rot / 180 * PI;
-
-            // Get result coordinates in rectangle system
-            vert.y = r * cos(deg_res);
-            vert.z = r * sin(deg_res);
-        }
-
-        // Move rotation axis from center
-        vert.y += rot_y0;
-        vert.z += rot_z0;
-    }
-
-    void ratate_3d(int rot_x = 50, int rot_y = 50, int rot_z = 0)
+    void translate_3d(float dx, float dy, float dz)
     {
         for (int i = 0; i < vertex_number; i++)
         {
-            Rotate_X(vertexes[i], rotate_speed.x, rot_y, rot_z);
-            Rotate_Y(vertexes[i], rotate_speed.y, rot_x, rot_z);
-            Rotate_Z(vertexes[i], rotate_speed.z, rot_x, rot_y);
+            vertexes[i].x += dx;
+            vertexes[i].y += dy;
+            vertexes[i].z += dz;
         }
+        rotate_3d_center.x += dx;
+        rotate_3d_center.y += dy;
+        rotate_3d_center.z += dz;
+    }
+
+    void rotate_3d()
+    {
+        for (int i = 0; i < vertex_number; i++) dot_rotate_3d(vertexes[i], rotate_3d_speed.x, rotate_3d_speed.y, rotate_3d_speed.z, rotate_3d_center.x, rotate_3d_center.y, rotate_3d_center.z);
     }
 
     void clear()
@@ -194,10 +152,7 @@ struct Console_Screen
     {
         for (int i = 0; i < h; i++)
         {
-            for (int j = 0; j < w; j++)
-            {
-                table[i * 101 + j] = ' ';
-            }
+            for (int j = 0; j < w; j++) table[i * 101 + j] = ' ';
             table[i * 101 + 100] = '\n';
         }
         table[100 * 101] = '\0';
@@ -209,20 +164,17 @@ struct Console_Screen
         printf("%s", table);
     }
 
-    void set_dot(double dot_x, double dot_y, char dot)
+    void set_dot(float dot_x, float dot_y, char dot)
     {
         int sx = floor(dot_x);
         int sy = floor(dot_y);
 
-        if (sx >= 0 && sy >= 0 && sx < w && sy < h)
-        {
-            table[sy * 101 + sx] = dot;
-        }
+        if (sx >= 0 && sy >= 0 && sx < w && sy < h) table[sy * 101 + sx] = dot;
     }
 
     void set_edge(Dot_2d vert1, Dot_2d vert2, char edge_dot)
     {
-        double x, y;
+        float x, y;
 
         // Render though X
         if (vert1.x > vert2.x)
@@ -254,7 +206,7 @@ struct Console_Screen
     Dot_2d convert_dot_3d_to_2d(Dot_3d dot3d)
     {
         Dot_2d dot2d;
-        double k;
+        float k;
 
         if (dot3d.z > 0) k = 1 + dot3d.z / camera.z;
         else k = 1 / (1 + -dot3d.z / camera.z);
@@ -278,7 +230,6 @@ struct Console_Screen
     }
 };
 
-
 Figure_3d FIGURE_1;
 Console_Screen SCREEN;
 
@@ -294,15 +245,18 @@ int main()
     FIGURE_1.read_from_file("figure0.dat");
 
     // Figure drawing
-    while (true)
+    int dist = 0;
+    int dz = -1;
+    while (!_kbhit() || _getch() != 27)
     {
         SCREEN.clear();
-        FIGURE_1.ratate_3d();
+        FIGURE_1.rotate_3d();
+        FIGURE_1.translate_3d(0, 0, dz);
+        dist += dz;
+        if (dist == 70 || dist == -150) dz *= -1;
+
         SCREEN.set_figure(FIGURE_1);
         SCREEN.print();
-
-        if (_kbhit()) if (_getch() == 27) break;
-        Sleep(5);
     }
 
     FIGURE_1.clear();
