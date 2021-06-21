@@ -1,12 +1,9 @@
-#include <iostream>
 #include <math.h>
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
 #define PI 3.14159265358979323846
-
-using namespace std;
 
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- FIGURE -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- 
 struct Dot_2d
@@ -39,7 +36,7 @@ struct Figure_3d
     Dot_3d* vertexes;
     Edge* edges;
     char dot_edge = (char)249;
-    char dot_vertex = (char)254;
+    char dot_vertex = (char)219;
     Rotate_3d_Speed rotate_speed;
 
     void read_from_file(const char* fname)
@@ -190,46 +187,40 @@ struct Console_Screen
 {
     const int w = 100;
     const int h = 100;
-    char table[100][101]; // one extra cell for '\0'
+    char table[100 * 101 + 1]; // one extra column for '\n' and last char for '\0'
     Dot_3d camera = { 50, 50, 50 };
 
     void clear()
     {
-        for (int i = 0; i < w; i++)
+        for (int i = 0; i < h; i++)
         {
-            for (int j = 0; j < h; j++)
+            for (int j = 0; j < w; j++)
             {
-                table[i][j] = ' ';
+                table[i * 101 + j] = ' ';
             }
-            table[i][w] = '\0';
+            table[i * 101 + 100] = '\n';
         }
+        table[100 * 101] = '\0';
     }
 
     void print()
     {
         system("cls");
-        for (int i = 0; i < h; i++)
-        {
-            for (int j = 0; j < w; j++)
-            {
-                cout << table[i][j];
-            }
-            cout << endl;
-        }
+        printf("%s", table);
     }
 
     void set_dot(double dot_x, double dot_y, char dot)
     {
-        int sx = round(dot_x);
-        int sy = round(dot_y);
+        int sx = floor(dot_x);
+        int sy = floor(dot_y);
 
         if (sx >= 0 && sy >= 0 && sx < w && sy < h)
         {
-            table[sy][sx] = dot;
+            table[sy * 101 + sx] = dot;
         }
     }
 
-    void generate_edge(Dot_2d vert1, Dot_2d vert2, char edge_dot)
+    void set_edge(Dot_2d vert1, Dot_2d vert2, char edge_dot)
     {
         double x, y;
 
@@ -240,7 +231,6 @@ struct Console_Screen
             vert1 = vert2;
             vert2 = temp;
         }
-
         for (x = vert1.x; x < vert2.x; x++)
         {
             y = (x - vert1.x) / (vert2.x - vert1.x) * (vert2.y - vert1.y) + vert1.y;
@@ -254,7 +244,6 @@ struct Console_Screen
             vert1 = vert2;
             vert2 = temp;
         }
-
         for (y = vert1.y; y < vert2.y; y++)
         {
             x = (y - vert1.y) / (vert2.y - vert1.y) * (vert2.x - vert1.x) + vert1.x;
@@ -278,28 +267,18 @@ struct Console_Screen
 
     void set_figure(Figure_3d FIGURE)
     {
-        // Projection 3d on 2d SCREEN 
-        for (int i = 0; i < FIGURE.vertex_number; i++)
-        {
-            FIGURE.vertexes_projection[i] = convert_dot_3d_to_2d(FIGURE.vertexes[i]);
-        }
+        // Projection 3d on 2d SCREEN
+        for (int i = 0; i < FIGURE.vertex_number; i++) FIGURE.vertexes_projection[i] = convert_dot_3d_to_2d(FIGURE.vertexes[i]);
 
-        // Connect vertexes
-        for (int i = 0; i < FIGURE.edge_number; i++)
-        {
-            generate_edge(FIGURE.vertexes_projection[FIGURE.edges[i].begin], FIGURE.vertexes_projection[FIGURE.edges[i].end], FIGURE.dot_edge);
-        }
+        // Set edges
+        for (int i = 0; i < FIGURE.edge_number; i++) set_edge(FIGURE.vertexes_projection[FIGURE.edges[i].begin], FIGURE.vertexes_projection[FIGURE.edges[i].end], FIGURE.dot_edge);
 
         // Set vertexes
-        for (int i = 0; i < FIGURE.vertex_number; i++)
-        {
-            set_dot(FIGURE.vertexes_projection[i].x, FIGURE.vertexes_projection[i].y, FIGURE.dot_vertex);
-        }
+        for (int i = 0; i < FIGURE.vertex_number; i++) set_dot(FIGURE.vertexes_projection[i].x, FIGURE.vertexes_projection[i].y, FIGURE.dot_vertex);
     }
 };
 
 
-// -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- GLOBAL VARS -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 Figure_3d FIGURE_1;
 Console_Screen SCREEN;
 
@@ -307,14 +286,7 @@ Console_Screen SCREEN;
 int main()
 {
     // Console settings
-    char console_size[30] = "mode con cols=";
-    char s[5];
-    _itoa_s(SCREEN.w, s, 10);
-    strcat_s(console_size, s);
-    strcat_s(console_size, " lines=");
-    _itoa_s(SCREEN.h + 1, s, 10);
-    strcat_s(console_size, s);
-    system(console_size);
+    system("mode con cols=100 lines=101");
     system("title Figures 3d");
     system("color 0F");
 
@@ -330,6 +302,7 @@ int main()
         SCREEN.print();
 
         if (_kbhit()) if (_getch() == 27) break;
+        Sleep(5);
     }
 
     FIGURE_1.clear();
