@@ -8,28 +8,29 @@
 #define PI 3.14159265358979323846
 
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- FIGURE -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-struct Dot_2d
+typedef struct
 {
     float x;
     float y;
-};
-struct Dot_3d
+} Dot_2d;
+
+typedef struct
 {
     float x;
     float y;
     float z;
-};
-struct Edge
+} Dot_3d;
+
+typedef struct
 {
     int begin;
     int end;
-};
-/// <summary>
-/// Figure_3d type contains all figure data and methods to work with it in 3d
-/// </summary>
-/// <param name="FigureDataFileName"> - Path to figure data file</param>
-struct Figure_3d
+} Edge;
+
+// -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- FIGURE -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+class Figure_3d
 {
+public:
     int vertex_number;
     int edge_number;
     Dot_2d* vertexes_projection;
@@ -47,24 +48,20 @@ struct Figure_3d
 };
 
 // -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- SCREEN -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-/// <summary>
-/// Console_Screen type works with output graphics in console
-/// </summary>
-/// <param name="screen_width, screen_height"> - Console resolution</param>
-/// <param name="camera_x, camera_y, camera_z">  - Camera position</param>
-struct Console_Screen
+class Console_Screen
 {
+public:
     int w;
     int h;
     char* table;
     Dot_3d camera;
     char dot_clear;
 
+    Dot_2d convert_dot_3d_to_2d(Dot_3d&);
     void clear();
     void print();
     void set_dot(float, float, char);
     void set_edge(Dot_2d, Dot_2d, char);
-    Dot_2d convert_dot_3d_to_2d(Dot_3d&);
     void set_figure(Figure_3d&);
 
     Console_Screen(int screen_width, int screen_height, float camera_x, float camera_y, float camera_z);
